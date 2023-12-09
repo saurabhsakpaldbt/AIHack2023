@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+        <script src="/static/js/socket.io.min.js"></script>
+        <title>Detection</title>
+        <style>
+            h2{
+                padding-bottom:20px;
+                font-weight: 600;
+                font-size: 3.2em; 
+            }
+            body{
+                color: #666; 
+                font-size: 20px;
+            }
+        </style> 
+        <script>
+            var socket = io.connect('http://' + document.domain + ':' + location.port);
+            var emergencyAlertTimer;
+            socket.on('display_alert', function(message) {
+                document.getElementById('alertMessage').innerHTML =  message ;
+            });
+            socket.on('display_not_in_room_alert', function(message) {
+                document.getElementById('notInRoomAlertMessage').innerHTML =  message ;
+            });
+            socket.on('call_for_emergency', function(message) {
+                document.getElementById('emergencyAlertMessage').innerHTML =  message ;
+                clearTimeout(emergencyAlertTimer);
+                emergencyAlertTimer = setTimeout(function() {
+                    document.getElementById('emergencyAlertMessage').innerHTML = "";
+                }, 7000);
+            });
+            function updateTime() {
+            var currentDate = new Date();
+            var hours = currentDate.getHours();
+            var minutes = currentDate.getMinutes();
+            var seconds = currentDate.getSeconds();
+            var formattedTime = hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+            document.getElementById('currentTime').innerText = 'Current Time: ' + formattedTime;
+        }
+        </script>
+    </head>
+    <body> 
+        <div class="container"> 
+            <center> 
+                <h4 style="padding: 10px 0px;">Detection</h2> 
+            </center> 
+            <div> 
+                <img src="{{ url_for('video_capture') }}" width="100%"> 
+            </div>
+        </div>
+        <div class="container"> 
+            <div class="row">
+                <div class="col-md-6">
+                    <div style="padding: 10px 0px; ">
+                        Inactivity threshold (seconds):<br>
+                        <input type="text" id="inactivityDurationInput" value="10" placeholder="Enter an integer" size=5 class="sr-only">
+                        <button id="submitButton" class="btn btn-primary">Apply</button>
+                        <div id="inactivityDurationInputError" style="color:red"></div>
+                    </div>
+                    <div style="padding-top: 11px 0px; display:none;">
+                        Not in room threshold (minutes):<br>
+                        <input type="text" id="notInRoomInput" value="1" placeholder="Enter an integer" size=5 class="sr-only">
+                        <button id="notInRoomInputsubmitButton" class="btn btn-primary">Apply</button>
+                        <div id="notInRoomInputError" style="color:red"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div style="padding: 10px 0px; ">
+                        <div style="padding-top: 11px 0px; ">
+                            <div><span id="currentTime"></span></div><hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    Activity start time (24-Hour Time):<br>
+                                    <input type="text" id="activityStartTimeInput" value="08:00" placeholder="hh:mm" size=5 class="sr-only"><br><br>
+                                </div>
+                                <div class="col-md-6">
+                                    Activity end time (24-Hour Time):<br>
+                                    <input type="text" id="activityEndTimeInput" value="19:00" placeholder="hh:mm" size=5 class="sr-only"><br>
+                                </div>
+                                <button id="activityTimeButton" class="btn btn-primary">Apply</button>
+                            <div id="activityTimeInputError" style="color:red"></div>
+                        </div>
+                        <hr>
+                        <div style="padding-top: 11px 0px; ">
+                            <div id="alertMessage" style="color:red"></div>
+                        </div>
+                        <hr>
+                        <div style="padding-top: 10px 0px; ">
+                            <div id="notInRoomAlertMessage" style="color:red"></div>
+                        </div>
+                        <div style="padding-top: 11px 0px; ">
+                            <h3 id="emergencyAlertMessage" style="color:red"></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.getElementById('submitButton').addEventListener('click', function() {
+                var inputValue = document.getElementById('inactivityDurationInput').value;
+                if (/^[1-9]\d*$/.test(inputValue)) {
+                    socket.emit('inactivity_duration_input', parseInt(inputValue, 10));
+                    document.getElementById('inactivityDurationInputError').innerHTML = ""
+                } else {
+                    document.getElementById('inactivityDurationInputError').innerHTML = "Please enter a valid integer."
+                }
+            });
+            document.getElementById('notInRoomInputsubmitButton').addEventListener('click', function() {
+                var inputValue = document.getElementById('notInRoomInput').value;
+                if (/^[1-9]\d*$/.test(inputValue)) {
+                    socket.emit('not_in_room_input', parseInt(inputValue, 10));
+                    document.getElementById('notInRoomInputError').innerHTML = ""
+                } else {
+                    document.getElementById('notInRoomInputError').innerHTML = "Please enter a valid integer."
+                }
+            });
+            document.getElementById('activityTimeButton').addEventListener('click', function() {
+                var inputValue1 = document.getElementById('activityStartTimeInput').value;
+                var inputValue2 = document.getElementById('activityEndTimeInput').value;
+                if (/^([01]\d|2[0-3]):([0-5]\d)$/.test(inputValue1) && /^([01]\d|2[0-3]):([0-5]\d)$/.test(inputValue2)) {
+                    socket.emit('activity_start_time_input', inputValue1, inputValue2);
+                    document.getElementById('activityTimeInputError').innerHTML = ""
+                } else {
+                    document.getElementById('activityTimeInputError').innerHTML = "Please enter a valid time."
+                }
+            });
+            updateTime();
+            setInterval(updateTime, 1000);
+        </script>
+        <script src="/static/js/bootstrap.min.js"></script>
+    </body>
+</html>

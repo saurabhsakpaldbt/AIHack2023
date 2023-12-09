@@ -1,0 +1,9 @@
+
+
+[PROD]
+DB_URI = mongodb+srv://<username>:<password>@<your-atlas-cluster-address>/
+DB_NAME = your_production_db_name
+
+[TEST]
+DB_URI = your_testing_db_uri (can be the same as Atlas, or a local MongoDB database)
+DB_NAME = your_testing_db_name
